@@ -45,13 +45,13 @@ export class OpeningStockComponent implements OnInit {
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
-      this.initForm();
+      this.initStockForm();
       this.loadRefreshData();
       this.loadStockList();
     }
   }
 
-  initForm(): void {
+  initStockForm(): void {
     const today = new Date().toISOString();
     const todayDate = today.split('T')[0];
     this.stockForm = this.fb.group({
@@ -112,50 +112,72 @@ export class OpeningStockComponent implements OnInit {
     });
   }
 
-  loadStockList(): void {
-    const now = new Date();
-    const firstDay = `${now.getFullYear()}_01_01`;
-    const today = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+    loadStockList(): void {
+      //     const now = new Date();
+      // const firstDay = `${now.getFullYear()}_01_01`;
+      // const today = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
 
-    // const dt = this.filters.dt
-    //   ? this.filters.dt.split('-').join('_')
-    //   : `${firstDay}-${today}`;
-    const dt = 'NA';
-
+      // const dt = this.filters.dt
+      //   ? this.filters.dt.split('-').join('_')
+      //   : `${firstDay}-${today}`;
+      
     this.stockService.pageList({
-      dt,
+      dt: 'NA',
       subloc: this.filters.subloc || 'NA',
       model_no: this.filters.model_no || 'NA',
       pc: this.filters.pc || 'NA',
       pt: this.filters.pt || 'NA',
       sp: this.filters.sp,
-      text1: this.filters.text1 || undefined,
-      text2: this.filters.text2 || undefined,
-      text3: this.filters.text3 || undefined,
-      text4: this.filters.text4 || undefined
+      text1: this.filters.text1 || 'NA',
+      text2: this.filters.text2 || 'NA',
+      text3: this.filters.text3 || 'NA',
+      text4: this.filters.text4 || 'NA'
     }).subscribe({
       next: (res) => {
-        const items = res.data || res.list || res || [];
-        this.stocks = Array.isArray(items) ? items : (items.data || []);
-        this.filteredStocks = [...this.stocks].sort((a: any, b: any) => {
-          const dateA = new Date(a.created_dt || a.updated_dt || 0).getTime();
-          const dateB = new Date(b.created_dt || b.updated_dt || 0).getTime();
-          return dateB - dateA;
-        }).slice(0, 10);
+        const items = res?.data || res?.list || res || [];
+
+        this.stocks = Array.isArray(items) ? items : [];
+
+        this.filteredStocks = this.stocks
+          .sort((a: any, b: any) =>
+            new Date(b.created_dt || b.updated_dt || 0).getTime() -
+            new Date(a.created_dt || a.updated_dt || 0).getTime()
+          )
+          .slice(0, 10);
       },
       error: (err) => console.error('Error loading stock list:', err)
     });
   }
 
-  openModal(stock?: any): void {
+
+  // openModal(stock?: any): void {
+  //   this.isEdit = !!stock;
+  //   this.selectedImages = {};
+  //   this.stockForm.reset();
+  //   this.initForm();
+  //   if (stock) {
+  //     this.stockForm.patchValue(stock);
+  //   }
+  //   this.showModal = true;
+  // }
+
+   openModal(stock?: any): void {
     this.isEdit = !!stock;
     this.selectedImages = {};
     this.stockForm.reset();
-    this.initForm();
+    this.initStockForm();
     if (stock) {
-      this.stockForm.patchValue(stock);
+      this.stockService.getById(stock.srno).subscribe({
+        next: (res) => {
+          const data = res.data || res;
+          this.stockForm.patchValue(data);
+          this.showModal = true;
+        },
+        error: (err) => console.error('Error loading stock details:', err)
+      });
+    } else {
+      this.showModal = true;
     }
-    this.showModal = true;
   }
 
   closeModal(): void {
@@ -200,44 +222,30 @@ export class OpeningStockComponent implements OnInit {
   preparePayload(): any {
     const value = this.stockForm.getRawValue();
 
-    const formatDate = (d: any) => {
-      if (!d || d === '' || d === null || d === undefined) {
-        return new Date().toISOString();
+    const formatDate = (d: any) =>
+      d ? new Date(d).toISOString() : new Date().toISOString();
+
+    return Object.keys(value).reduce((payload: any, key) => {
+
+      if (key.startsWith('ret_')) return payload;
+
+      if (['purchase_date', 'mfg_date', 'created_dt', 'updated_dt'].includes(key)) {
+        payload[key] = formatDate(value[key]);
+        return payload;
       }
-      try {
-        const date = new Date(d);
-        if (isNaN(date.getTime())) {
-          return new Date().toISOString();
+
+      if (['product_img', 'purchase_img'].includes(key)) {
+        if (this.selectedImages[key]) {
+          payload[key] = value[key];
+          payload[`${key}Base64`] = value[`${key}Base64`];
         }
-        return date.toISOString();
-      } catch {
-        return new Date().toISOString();
+        return payload;
       }
-    };
 
-    value.purchase_date = formatDate(value.purchase_date);
-    value.mfg_date = formatDate(value.mfg_date);
-    value.created_dt = formatDate(value.created_dt);
-    value.updated_dt = formatDate(value.updated_dt);
+      payload[key] = value[key];
+      return payload;
 
-    const payload = { ...value };
-
-    // Fix image fields: if not newly selected, clear to avoid sending full paths
-    ['product_img', 'purchase_img'].forEach((field: string) => {
-      const base64Field = `${field}Base64`;
-      if (!this.selectedImages[field]) {
-        delete payload[field];
-        delete payload[base64Field];
-      }
-    });
-
-    Object.keys(payload).forEach(key => {
-      if (key.startsWith('ret_')) {
-        delete (payload as any)[key];
-      }
-    });
-
-    return payload;
+    }, {});
   }
 
   applyFilters(): void {

@@ -70,7 +70,6 @@ export class OpeningStockSerialnosComponent implements OnInit {
     this.stockService.refresh().subscribe({
       next: (res) => {
         const data = res.data1 ? res : res;
-        // Try data1 for status, fallback to other data arrays if needed
         const statusData = data.data1 || data.statusList || [];
         this.statusList = statusData.map((x: any) => ({ id: x.status || x.srno || x.id, name: x.statusName || x.status_name || x.name || x.status || 'Unknown' }));
       },

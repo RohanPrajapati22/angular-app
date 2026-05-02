@@ -23,10 +23,10 @@ export class LoginComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.initForm();
+    this.initLoginForm();
   }
 
-  initForm(): void {
+  initLoginForm(): void {
     this.loginForm = this.fb.group({
       viplcode: ['9803', Validators.required],
       username: ['9810000003', Validators.required],

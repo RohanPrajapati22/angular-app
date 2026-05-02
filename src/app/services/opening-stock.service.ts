@@ -16,6 +16,10 @@ export class OpeningStockService {
     return this.http.post(`${this.baseUrl}/save`, data);
   }
 
+  getById(srno: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/getbyid/${srno}`);
+  }
+
   pageList(params: {
     dt: string;
     subloc: string;
