@@ -1,0 +1,190 @@
+<div class="page-header">
+  <h2>Opening Stock</h2>
+  <div class="actions">
+    <button class="btn-filter" (click)="showFilters = !showFilters">Filters</button>
+    <button class="btn-primary" (click)="openModal()">Add Stock</button>
+  </div>
+</div>
+
+<div class="filters-panel" *ngIf="showFilters">
+  <div class="filter-row">
+    <input type="date" [(ngModel)]="filters.dt" placeholder="Date Range">
+    <input type="text" [(ngModel)]="filters.subloc" placeholder="Sub Location">
+    <input type="text" [(ngModel)]="filters.model_no" placeholder="Model No">
+    <input type="text" [(ngModel)]="filters.pc" placeholder="Product Category">
+    <input type="text" [(ngModel)]="filters.pt" placeholder="Product Type">
+    <select [(ngModel)]="filters.sp">
+      <option [value]="0">Spare: Yes</option>
+      <option [value]="1">Spare: No</option>
+    </select>
+    <input type="text" [(ngModel)]="filters.text1" placeholder="Bill No">
+    <input type="text" [(ngModel)]="filters.text2" placeholder="Product Name">
+    <input type="text" [(ngModel)]="filters.text3" placeholder="Supplier">
+    <input type="text" [(ngModel)]="filters.text4" placeholder="Location">
+  </div>
+  <div class="filter-actions">
+    <button class="btn-primary" (click)="applyFilters()">Apply</button>
+    <button class="btn-secondary" (click)="resetFilters()">Reset</button>
+  </div>
+</div>
+
+<div class="table-container">
+  <table>
+    <thead>
+        <tr>
+          <th>Sr No</th>
+          <th>Product</th>
+          <th>Location</th>
+          <th>Supplier</th>
+          <th>Type</th>
+          <th>Product Category</th>
+          <th>Model No</th>
+          <th>Product Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredStocks; let i = index">
+          <td>{{  i + 1 }}</td>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.location }}</td>
+          <td>{{ item.supplier }}</td>
+          <td>{{ item.product_type }}</td>
+          <td>{{ item.product_category }}</td>
+          <td>{{ item.model_no }}</td>
+          <td>{{ item.product_category }}</td>
+          <td>
+            <button class="btn-edit" (click)="openModal(item)">Edit</button>
+            <button class="btn-serial" (click)="viewSerialNumbers(item)">Serial Nos</button>
+          </td>
+        </tr>
+      <tr *ngIf="filteredStocks.length === 0">
+        <td colspan="6" class="no-data">No records found</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isEdit ? 'Edit' : 'Add' }} Opening Stock</h3>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+    <form [formGroup]="stockForm" (ngSubmit)="onSave()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Location *</label>
+          <input type="text" formControlName="location" list="locations">
+          <datalist id="locations">
+            <option *ngFor="let loc of refreshData?.locations || []" [value]="loc">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Sub Location</label>
+          <input type="text" formControlName="sub_location" list="sublocs">
+          <datalist id="sublocs">
+            <option *ngFor="let s of refreshData?.sub_locations || []" [value]="s">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Supplier</label>
+          <input type="text" formControlName="supplier" list="suppliers">
+          <datalist id="suppliers">
+            <option *ngFor="let s of refreshData?.suppliers || []" [value]="s">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" formControlName="product_name" list="products">
+          <datalist id="products">
+            <option *ngFor="let p of refreshData?.products || []" [value]="p">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Part Name</label>
+          <input type="text" formControlName="part_name" list="partnames">
+          <datalist id="partnames">
+            <option *ngFor="let p of refreshData?.part_names || []" [value]="p">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Model No</label>
+          <input type="text" formControlName="model_no" list="modelnos">
+          <datalist id="modelnos">
+            <option *ngFor="let m of refreshData?.model_nos || []" [value]="m">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Product Category</label>
+          <input type="text" formControlName="product_category" list="cats">
+          <datalist id="cats">
+            <option *ngFor="let c of refreshData?.categories || []" [value]="c">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Product Type</label>
+          <input type="text" formControlName="product_type" list="types">
+          <datalist id="types">
+            <option *ngFor="let t of refreshData?.types || []" [value]="t">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Company</label>
+          <input type="text" formControlName="company" list="companies">
+          <datalist id="companies">
+            <option *ngFor="let c of refreshData?.companies || []" [value]="c">
+          </datalist>
+        </div>
+       
+        <div class="form-group">
+          <label>Qty</label>
+          <input type="number" formControlName="qty">
+        </div>
+        <div class="form-group">
+          <label>MRP</label>
+          <input type="number" formControlName="mrp">
+        </div>
+        <div class="form-group">
+          <label>Purchase Rate</label>
+          <input type="number" formControlName="purchase_rate">
+        </div>
+        <div class="form-group">
+          <label>Purchase Date</label>
+          <input type="date" formControlName="purchase_date">
+        </div>
+        <div class="form-group">
+          <label>Purchase Ref No</label>
+          <input type="text" formControlName="purchase_ref_no">
+        </div>
+        <div class="form-group">
+          <label>Barcode</label>
+          <input type="text" formControlName="barcode">
+        </div>
+        <div class="form-group">
+          <label>Is Product Spare</label>
+          <select formControlName="is_product_spare">
+            <option [value]="0">Yes</option>
+            <option [value]="1">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Product Image</label>
+          <input type="file" (change)="onImageSelect($event, 'product_img')">
+        </div>
+        <div class="form-group">
+          <label>Purchase Image</label>
+          <input type="file" (change)="onImageSelect($event, 'purchase_img')">
+        </div>
+        <div class="form-group full-width">
+          <label>Note</label>
+          <textarea formControlName="note" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

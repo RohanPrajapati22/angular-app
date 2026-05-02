@@ -1,0 +1,103 @@
+<div class="page-container">
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">← Back to Opening Stock</button>
+    <h2>Opening Stock Serial Numbers</h2>
+    <p *ngIf="parentSrno">Parent ID: {{ parentSrno }}</p>
+    <button class="btn-primary" (click)="openModal()">+ Add Serial Number</button>
+  </div>
+
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-item">
+        <label>Status</label>
+        <select [(ngModel)]="filters.text2" (change)="applyFilters()">
+          <option value="">All</option>
+          <option *ngFor="let s of statusList" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Search</label>
+        <input type="text" [(ngModel)]="filters.searchString" placeholder="Search..." />
+      </div>
+      <div class="filter-actions">
+        <button class="btn-secondary" (click)="applyFilters()">Search</button>
+        <button class="btn-secondary" (click)="resetFilters()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Sr No</th>
+          <th>Serial No 1</th>
+          <th>Serial No 2</th>
+          <th>Qty</th>
+          <th>Status</th>
+          <th>Image</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredSerials; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.serial_no1 }}</td>
+          <td>{{ item.serial_no2 }}</td>
+          <td>{{ item.qty }}</td>
+          <td>{{ item.status }}</td>
+          <td>
+            <img *ngIf="item.serial_img" [src]="'https://api2023.zerolite.in/' + item.serial_img" width="50" height="50" />
+          </td>
+          <td>
+            <button class="btn-edit" (click)="openModal(item)">Edit</button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredSerials.length === 0">
+          <td colspan="7" class="no-data">No records found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isEdit ? 'Edit' : 'Add' }} Serial Number</h3>
+      <button class="close-btn" (click)="closeModal()">×</button>
+    </div>
+    <form [formGroup]="serialForm" (ngSubmit)="onSave()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Serial No 1 *</label>
+          <input formControlName="serial_no1" placeholder="Serial No 1" />
+        </div>
+        <div class="form-group">
+          <label>Serial No 2</label>
+          <input formControlName="serial_no2" placeholder="Serial No 2" />
+        </div>
+        <div class="form-group">
+          <label>Qty</label>
+          <input formControlName="qty" type="number" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select formControlName="status">
+            <option *ngFor="let s of statusList" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Serial Image</label>
+          <input type="file" (change)="onImageSelect($event, 'serial_img')" accept="image/*" />
+          <img *ngIf="serialForm.value.serial_img && !selectedImages['serial_img']" 
+               [src]="'https://api2023.zerolite.in/' + serialForm.value.serial_img" width="100" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
